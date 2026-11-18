@@ -11,7 +11,13 @@ const api = axios.create({
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    // Avoid redirecting to /login when already on the login page.
+    // Otherwise the /auth/me check inside AuthProvider (which returns 401
+    // for unauthenticated users) would trigger an infinite reload loop.
+    if (
+      error.response?.status === 401 &&
+      window.location.pathname !== '/login'
+    ) {
       window.location.href = '/login';
     }
     return Promise.reject(error);

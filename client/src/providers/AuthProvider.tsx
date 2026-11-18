@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import api from '@/lib/api';
 import { User } from '@/types';
 
@@ -18,30 +18,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+
+    const checkAuth = async () => {
+      try {
+        const response = await api.get('/auth/me');
+        if (mounted) setUser(response.data.data ?? null);
+      } catch {
+        if (mounted) setUser(null);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
     checkAuth();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  const checkAuth = async () => {
-    try {
-      const response = await api.get('/auth/me');
-      setUser(response.data.data);
-    } catch (error) {
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const login = async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string) => {
     const response = await api.post('/auth/login', { email, password });
     setUser(response.data.data);
-  };
+  }, []);
 
-  const logout = async () => {
-    await api.post('/auth/logout');
+  const logout = useCallback(async () => {
+    await api.post('/auth/logout').catch(() => {
+      // Ignore logout errors; always clear local state and redirect.
+    });
     setUser(null);
     window.location.href = '/login';
-  };
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, loading, login, logout }}>
