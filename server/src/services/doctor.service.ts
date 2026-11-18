@@ -55,7 +55,7 @@ export const listDoctorsService = async (options: {
 
   // Verify index usage in development
   if (process.env.NODE_ENV === 'development') {
-    const explainResult = await query.clone().explain('executionStats');
+    const explainResult = await query.clone().explain('executionStats') as any;
     console.log('Doctor list query explain:', JSON.stringify(explainResult.executionStats, null, 2));
   }
 

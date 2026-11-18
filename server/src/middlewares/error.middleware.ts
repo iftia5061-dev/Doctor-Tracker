@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { ApiError } from '../utils/ApiError.js';
+import { env } from '../config/env.js';
 
 export const errorHandler = (
   err: Error,
@@ -7,7 +8,12 @@ export const errorHandler = (
   res: Response,
   next: NextFunction
 ) => {
-  console.error('Error:', err);
+  // Log the real stack in development, but never leak it to the client.
+  if (env.NODE_ENV === 'development') {
+    console.error('Error:', err.stack ?? err.message ?? err);
+  } else {
+    console.error('Error:', err.message);
+  }
 
   if (err instanceof ApiError) {
     return res.status(err.statusCode).json({

@@ -1,4 +1,6 @@
 import 'dotenv/config';
+import dns from 'dns';
+dns.setServers(['8.8.8.8', '8.8.4.4']);
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import { env } from '../config/env.js';
@@ -51,21 +53,33 @@ const seed = async () => {
     await mongoose.connect(env.MONGODB_URI);
     console.log('✅ Connected to MongoDB');
 
-    // Clear existing data
-    await User.deleteMany({});
+    // Clear existing data (doctors/patients only; admin is upserted below)
     await Doctor.deleteMany({});
     await Patient.deleteMany({});
     console.log('🗑️  Cleared existing data');
 
-    // Create admin user
+    // Seed admin user from .env (upsert: update if exists, otherwise create)
+    const adminEmail = env.ADMIN_EMAIL.trim().toLowerCase();
     const hashedPassword = await bcrypt.hash(env.ADMIN_PASSWORD, 10);
-    const admin = await User.create({
-      name: 'Admin',
-      email: env.ADMIN_EMAIL,
-      password: hashedPassword,
-      role: 'admin',
-    });
-    console.log('✅ Admin user created');
+
+    const existingAdmin = await User.findOne({ email: adminEmail });
+
+    if (existingAdmin) {
+      await User.findOneAndUpdate(
+        { email: adminEmail },
+        { name: 'Admin', email: adminEmail, password: hashedPassword, role: 'admin' },
+        { new: true },
+      );
+      console.log('✅ Admin user updated');
+    } else {
+      await User.create({
+        name: 'Admin',
+        email: adminEmail,
+        password: hashedPassword,
+        role: 'admin',
+      });
+      console.log('✅ Admin user created');
+    }
 
     // Create doctors
     const doctors = [];
@@ -108,7 +122,7 @@ const seed = async () => {
 
     console.log('\n🎉 Seed completed successfully!');
     console.log(`\n📧 Admin Email: ${env.ADMIN_EMAIL}`);
-    console.log(`🔑 Admin Password: ${env.ADMIN_PASSWORD}`);
+    console.log('🔑 Admin password: set from .env');
 
     process.exit(0);
   } catch (error) {

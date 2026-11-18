@@ -46,7 +46,6 @@ const doctorSchema = new Schema<IDoctor>(
 );
 
 // Indexes
-doctorSchema.index({ email: 1 }, { unique: true });
 doctorSchema.index({ specialization: 1, createdAt: -1 });
 doctorSchema.index({ hospital: 1, createdAt: -1 });
 doctorSchema.index({ createdAt: -1 });

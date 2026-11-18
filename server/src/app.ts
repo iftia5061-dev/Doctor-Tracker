@@ -10,6 +10,9 @@ import { generalRateLimit } from './middlewares/rateLimit.middleware.js';
 
 const app: Application = express();
 
+// Trust proxy (for Nginx reverse proxy)
+app.set('trust proxy', 1);
+
 // Security
 app.use(helmet());
 
@@ -37,7 +40,7 @@ if (env.NODE_ENV === 'development') {
 }
 
 // Health check
-app.get('/health', (req, res) => {
+app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 

@@ -4,7 +4,8 @@ import { generateToken } from '../utils/jwt.js';
 import { ApiError } from '../utils/ApiError.js';
 
 export const loginService = async (email: string, password: string) => {
-  const user = await User.findOne({ email }).select('+password');
+  const normalizedEmail = email.trim().toLowerCase();
+  const user = await User.findOne({ email: normalizedEmail }).select('+password');
 
   if (!user) {
     throw new ApiError(401, 'Invalid credentials');
@@ -38,7 +39,9 @@ export const registerService = async (
   email: string,
   password: string
 ) => {
-  const existingUser = await User.findOne({ email });
+  const normalizedEmail = email.trim().toLowerCase();
+
+  const existingUser = await User.findOne({ email: normalizedEmail });
 
   if (existingUser) {
     throw new ApiError(400, 'Email already exists');
@@ -48,7 +51,7 @@ export const registerService = async (
 
   const user = await User.create({
     name,
-    email,
+    email: normalizedEmail,
     password: hashedPassword,
   });
 
